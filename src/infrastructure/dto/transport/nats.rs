@@ -3,16 +3,11 @@ use std::fmt::Debug;
 
 use chrono::{serde::ts_seconds, DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use sqlx::types::Json;
 
 use crate::domain::entity::{aggregate::Aggregate, event::EventEnvelope};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct NATSEventEnvelope<A>
-where
-    A: Default + Serialize,
-{
+pub struct NATSEventEnvelope<A> {
     pub aggregate_id: String,
     pub aggregate_type: String,
     pub sequence: String,
@@ -37,7 +32,7 @@ impl<A: Default + Serialize + Debug + Into<B::Event>, B: Aggregate> Into<EventEn
     }
 }
 
-impl<A: Default + Serialize> Into<String> for NATSEventEnvelope<A> {
+impl<A: Serialize> Into<String> for NATSEventEnvelope<A> {
     fn into(self) -> String {
         return serde_json::to_string(&self).unwrap();
     }
