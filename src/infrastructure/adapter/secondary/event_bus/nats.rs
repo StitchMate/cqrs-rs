@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use futures::{Stream, StreamExt};
-use serde::Deserialize;
+use serde::{de::DeserializeOwned, Deserialize};
 use tokio_stream::iter;
 
 use crate::application::port::outbound::event_bus::EventBus;
@@ -25,7 +25,7 @@ impl NATSBus {
 }
 
 #[async_trait]
-impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + Deserialize<'static>>
+impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + DeserializeOwned>
     EventBus<T, A, String, T> for NATSBus
 {
     async fn send_event(&self, event: T) -> Result<(), anyhow::Error> {
@@ -47,7 +47,7 @@ impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + Deserialize
         let sub_iter = sub.into_iter();
         let stream = iter(sub_iter);
         let stream = stream.map(|x| {
-            let event: A = serde_json::from_str(std::str::from_utf8(&x.data).unwrap()).unwrap();
+            let event: A = serde_json::from_slice(&x.data).unwrap();
             return event.into();
         });
         return Ok(Box::new(stream));
