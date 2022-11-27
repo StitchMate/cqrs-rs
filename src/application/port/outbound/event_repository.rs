@@ -13,6 +13,7 @@ pub trait EventRepository<IE, OE, IS, OS> {
         after: Option<String>,
     ) -> Result<Vec<OE>, anyhow::Error>;
     async fn store_snapshot(&self, snapshot: IS) -> Result<(), anyhow::Error>;
+    async fn migrate(&self, path: String) -> Result<(), anyhow::Error>;
     async fn retrieve_latest_snapshot(
         &self,
         aggregate_id: String,
