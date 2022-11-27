@@ -37,6 +37,12 @@ impl<A: Default + Serialize + Debug + Into<B::Event>, B: Aggregate> Into<EventEn
     }
 }
 
+impl<A: Default + Serialize> Into<String> for NATSEventEnvelope<A> {
+    fn into(self) -> String {
+        return serde_json::to_string(&self).unwrap();
+    }
+}
+
 impl<A: Default + Debug + Into<B::Event> + From<B::Event> + Serialize, B: Aggregate>
     From<EventEnvelope<B>> for NATSEventEnvelope<A>
 {
