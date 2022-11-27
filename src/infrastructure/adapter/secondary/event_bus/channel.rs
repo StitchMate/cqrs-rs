@@ -22,14 +22,14 @@ impl<T> ChannelBus<T> {
 }
 
 #[async_trait]
-impl<T: Sync + Send + 'static> EventBus<T, T> for ChannelBus<T> {
+impl<T: Sync + Send + 'static> EventBus<T, T, T> for ChannelBus<T> {
     async fn send_event(&self, event: T) -> Result<(), anyhow::Error> {
         self.sender.try_send(event).map_err(|_e| anyhow!("Unknown"))
     }
 
-    async fn receive_events(&self) -> Box<dyn Stream<Item = T>> {
+    async fn receive_events(&self) -> Result<Box<dyn Stream<Item = T>>, anyhow::Error> {
         let rx = self.receiver.clone().into_iter();
         let stream: Box<dyn Stream<Item = T>> = Box::new(iter(rx));
-        return stream;
+        return Ok(stream);
     }
 }

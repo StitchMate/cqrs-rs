@@ -4,26 +4,20 @@ use anyhow::anyhow;
 use async_trait::async_trait;
 use crossbeam_channel::unbounded;
 use futures::{Stream, StreamExt};
-use tokio_stream::{self as stream, iter};
+use tokio_stream::iter;
 
 use crate::application::port::outbound::event_bus::EventBus;
 
-#[derive(Clone)]
-pub struct NATSBus<T> {
-    receiver: crossbeam_channel::Receiver<T>,
-    sender: crossbeam_channel::Sender<T>,
+pub struct NATSBus {
     connection: Arc<nats::Connection>,
 }
 
-impl<T> NATSBus<T> {
+impl NATSBus {
     pub fn new(address: String) -> Result<Self, anyhow::Error> {
-        let (tx, rx) = unbounded();
         match nats::connect(address) {
             Err(e) => return Err(e.into()),
             Ok(x) => {
                 return Ok(Self {
-                    receiver: rx,
-                    sender: tx,
                     connection: Arc::new(x),
                 })
             }
@@ -32,7 +26,7 @@ impl<T> NATSBus<T> {
 }
 
 #[async_trait]
-impl<T: Sync + Send + 'static + Into<String> + From<nats::Message>> EventBus<T, T> for NATSBus<T> {
+impl<T: Sync + Send + 'static + Into<String> + From<String>> EventBus<T, String, T> for NATSBus {
     async fn send_event(&self, event: T) -> Result<(), anyhow::Error> {
         let client = self.connection.clone();
         let evt: String = event.into();
@@ -42,15 +36,18 @@ impl<T: Sync + Send + 'static + Into<String> + From<nats::Message>> EventBus<T, 
         }
     }
 
-    async fn receive_events(&self) -> Box<dyn Stream<Item = T>> {
+    async fn receive_events(&self) -> Result<Box<dyn Stream<Item = T>>, anyhow::Error> {
         let client = self.connection.clone();
-        let sub = client.subscribe("test").unwrap();
+        let sub = match client.subscribe("test") {
+            Ok(x) => x,
+            Err(e) => return Err(e.into()),
+        };
         let sub_iter = sub.into_iter();
         let stream = iter(sub_iter);
         let stream = stream.map(|x| {
-            let event: T = x.into();
+            let event: T = std::str::from_utf8(&x.data).unwrap().to_string().into();
             return event;
         });
-        return Box::new(stream);
+        return Ok(Box::new(stream));
     }
 }
