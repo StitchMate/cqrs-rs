@@ -26,11 +26,14 @@ impl NATSBus {
 }
 
 #[async_trait]
-impl<T: Sync + Send + 'static + Into<String> + From<String>> EventBus<T, String, T> for NATSBus {
+impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + From<String>>
+    EventBus<T, A, String, T> for NATSBus
+{
     async fn send_event(&self, event: T) -> Result<(), anyhow::Error> {
         let client = self.connection.clone();
-        let evt: String = event.into();
-        match client.publish("test", evt) {
+        let evt: A = event.into();
+        let transport_evt: String = evt.into();
+        match client.publish("test", transport_evt) {
             Ok(_) => Ok(()),
             Err(e) => Err(e.into()),
         }
@@ -45,8 +48,8 @@ impl<T: Sync + Send + 'static + Into<String> + From<String>> EventBus<T, String,
         let sub_iter = sub.into_iter();
         let stream = iter(sub_iter);
         let stream = stream.map(|x| {
-            let event: T = std::str::from_utf8(&x.data).unwrap().to_string().into();
-            return event;
+            let event: A = std::str::from_utf8(&x.data).unwrap().to_string().into();
+            return event.into();
         });
         return Ok(Box::new(stream));
     }

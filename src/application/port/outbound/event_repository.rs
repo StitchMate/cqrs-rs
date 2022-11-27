@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use super::event_bus::EventBus;
 
 #[async_trait]
-pub trait EventRepository<IE, T, OE, IS, OS> {
+pub trait EventRepository<IE, T, Q, OE, IS, OS> {
     async fn store_events(&self, events: Vec<IE>) -> Result<(), anyhow::Error>;
     async fn retrieve_events(
         &self,
@@ -25,6 +25,6 @@ pub trait EventRepository<IE, T, OE, IS, OS> {
     async fn send_and_delete_outbox_event(
         &self,
         event: IE,
-        bus: &Arc<dyn EventBus<IE, T, OE> + Send + Sync>,
+        bus: &Arc<dyn EventBus<IE, T, Q, OE> + Send + Sync>,
     ) -> Result<(), anyhow::Error>;
 }

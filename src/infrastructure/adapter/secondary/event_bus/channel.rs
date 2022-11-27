@@ -22,7 +22,7 @@ impl<T> ChannelBus<T> {
 }
 
 #[async_trait]
-impl<T: Sync + Send + 'static> EventBus<T, T, T> for ChannelBus<T> {
+impl<T: Sync + Send + 'static> EventBus<T, T, T, T> for ChannelBus<T> {
     async fn send_event(&self, event: T) -> Result<(), anyhow::Error> {
         self.sender.try_send(event).map_err(|_e| anyhow!("Unknown"))
     }
