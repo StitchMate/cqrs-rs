@@ -1,7 +1,9 @@
+use std::{pin::Pin, sync::Arc};
+
 use anyhow::anyhow;
 use async_trait::async_trait;
 use crossbeam_channel::unbounded;
-use futures::Stream;
+use futures::{lock::Mutex, stream::BoxStream, Stream, StreamExt};
 use tokio_stream::iter;
 
 use crate::application::port::outbound::event_bus::EventBus;
@@ -27,9 +29,9 @@ impl<T: Sync + Send + 'static> EventBus<T, T, T, T> for ChannelBus<T> {
         self.sender.try_send(event).map_err(|_e| anyhow!("Unknown"))
     }
 
-    async fn receive_events(&self) -> Result<Box<dyn Stream<Item = T>>, anyhow::Error> {
+    async fn receive_events(&self) -> Result<BoxStream<'_, T>, anyhow::Error> {
         let rx = self.receiver.clone().into_iter();
-        let stream: Box<dyn Stream<Item = T>> = Box::new(iter(rx));
+        let stream = iter(rx).boxed();
         return Ok(stream);
     }
 }

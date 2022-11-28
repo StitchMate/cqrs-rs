@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use futures::Stream;
+use futures::stream::BoxStream;
 
 #[async_trait]
 pub trait EventBus<IE, T, Q, OE>
@@ -8,5 +8,5 @@ where
     T: Into<OE> + Into<Q>,
 {
     async fn send_event(&self, event: IE) -> Result<(), anyhow::Error>;
-    async fn receive_events(&self) -> Result<Box<dyn Stream<Item = OE>>, anyhow::Error>;
+    async fn receive_events(&self) -> Result<BoxStream<'_, OE>, anyhow::Error>;
 }

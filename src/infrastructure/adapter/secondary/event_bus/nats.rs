@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use futures::{Stream, StreamExt};
-use serde::{de::DeserializeOwned, Deserialize};
+use futures::{stream::BoxStream, Stream, StreamExt};
+use serde::de::DeserializeOwned;
 use tokio_stream::iter;
 
 use crate::application::port::outbound::event_bus::EventBus;
@@ -38,7 +38,7 @@ impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + Deserialize
         }
     }
 
-    async fn receive_events(&self) -> Result<Box<dyn Stream<Item = T>>, anyhow::Error> {
+    async fn receive_events(&self) -> Result<BoxStream<'_, T>, anyhow::Error> {
         let client = self.connection.clone();
         let sub = match client.subscribe("test") {
             Ok(x) => x,
@@ -50,6 +50,6 @@ impl<T: Sync + Send + 'static, A: Into<T> + From<T> + Into<String> + Deserialize
             let event: A = serde_json::from_slice(&x.data).unwrap();
             return event.into();
         });
-        return Ok(Box::new(stream));
+        return Ok(stream.boxed());
     }
 }
