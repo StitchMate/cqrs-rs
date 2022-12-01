@@ -26,5 +26,7 @@ pub trait Aggregate: Default + Sync + Send {
 
     fn apply(&mut self, event: Self::Event);
 
+    fn apply_snapshot(&mut self, snapshot: AggregateSnapshot<Self>);
+
     fn snapshot(&mut self) -> Option<AggregateSnapshot<Self>>;
 }
